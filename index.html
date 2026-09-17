@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#B71C1C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TERRASANA SOS">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>TERRASANA SOS IA</title>
+<style>
+:root{
+  --emergency:#B71C1C;--emergency-dark:#7F0000;--emergency-light:#F05545;
+  --bg:#FFEBEE;--bg2:#FFCDD2;--surface:#FFFFFF;
+  --text:#212121;--text-2:#616161;--muted:#9E9E9E;
+  --border:#E0E0E0;--online:#4CAF50;--offline:#9E9E9E;
+  --warn:#FF9800;--danger:#C62828;--info:#1565C0;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);overscroll-behavior:none}
+body{background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);min-height:100vh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.screen{display:none;min-height:100vh;padding:20px}
+.screen.active{display:block}
+
+/* --- Login / Register (fondo rojo) --- */
+.screen-auth{background:linear-gradient(180deg,var(--emergency) 0%,var(--emergency-dark) 100%);display:none;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;padding:24px}
+.screen-auth.active{display:flex}
+.brand{text-align:center;margin-bottom:24px;color:#fff}
+.brand h1{font-size:32px;font-weight:800;letter-spacing:2px;line-height:1}
+.brand h2{font-size:18px;font-weight:600;letter-spacing:4px;margin-top:2px}
+.brand p{font-size:12px;color:#FFCDD2;margin-top:8px}
+.card{background:var(--surface);border-radius:16px;padding:24px;width:100%;max-width:420px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.card h3{font-size:20px;font-weight:700;text-align:center;margin-bottom:16px;color:var(--text)}
+label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-2);margin-top:12px;margin-bottom:4px;letter-spacing:.5px}
+input[type=text],input[type=email],input[type=password],input[type=tel]{width:100%;padding:14px;border:1px solid var(--border);border-radius:8px;font-size:15px;background:#FAFAFA;color:var(--text);font-family:inherit}
+input:focus{outline:none;border-color:var(--emergency);background:#fff}
+.btn{width:100%;padding:14px;background:var(--emergency);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px;transition:opacity .15s}
+.btn:active{opacity:.85}
+.btn:disabled{opacity:.5;cursor:wait}
+.btn-ghost{background:transparent;color:var(--text-2);margin-top:8px;font-weight:400;font-size:14px}
+.btn-ghost b{color:var(--emergency);font-weight:700}
+.disclaimer{color:#FFCDD2;font-size:11px;text-align:center;margin-top:20px;line-height:1.5;max-width:420px}
+.error{background:#FFEBEE;color:var(--danger);padding:10px;border-radius:6px;font-size:13px;margin-top:12px;display:none}
+.error.show{display:block}
+
+/* --- Secciones dentro del registro --- */
+.section-title{font-size:12px;font-weight:800;color:var(--emergency);text-transform:uppercase;letter-spacing:1px;margin-top:20px;margin-bottom:4px;padding-bottom:6px;border-bottom:2px solid #FFCDD2;display:flex;align-items:center;gap:6px}
+.section-title:first-of-type{margin-top:0}
+.section-hint{font-size:12px;color:var(--text-2);margin-top:2px;margin-bottom:8px;line-height:1.4;font-style:italic}
+
+/* --- Pantalla de permisos --- */
+.perm-icon{width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;justify-content:center;align-items:center;margin:0 auto 20px;position:relative;animation:permPulse 2s ease-in-out infinite}
+@keyframes permPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.4)}
+  50%{box-shadow:0 0 0 20px rgba(255,255,255,0)}
+}
+.perm-icon svg{width:52px;height:52px;fill:#fff}
+.perm-title{color:#fff;font-size:24px;font-weight:800;text-align:center;margin-bottom:12px;line-height:1.2}
+.perm-desc{color:#FFCDD2;font-size:14px;text-align:center;margin-bottom:24px;line-height:1.5;max-width:340px}
+.perm-benefits{background:rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;margin-bottom:20px;max-width:340px;width:100%}
+.perm-benefits li{color:#fff;font-size:13px;line-height:1.6;margin-bottom:6px;list-style:none;padding-left:22px;position:relative}
+.perm-benefits li:last-child{margin-bottom:0}
+.perm-benefits li::before{content:"✓";position:absolute;left:0;top:0;color:#fff;font-weight:900;background:rgba(255,255,255,.2);width:16px;height:16px;border-radius:50%;display:flex;justify-content:center;align-items:center;font-size:10px}
+.perm-btn-authorize{width:100%;max-width:340px;padding:16px;background:#fff;color:var(--emergency);border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.perm-btn-authorize:active{opacity:.85}
+.perm-btn-skip{background:transparent;color:#FFCDD2;font-size:13px;padding:10px;border:none;cursor:pointer;text-decoration:underline}
+.perm-status{color:#fff;font-size:12px;margin-top:16px;text-align:center;min-height:18px}
+
+/* --- SOS Home --- */
+.header{display:flex;align-items:center;margin-bottom:16px;padding-top:8px}
+.header .greeting{flex:1}
+.header h2{font-size:20px;font-weight:700}
+.header .sub{font-size:12px;color:var(--text-2);margin-top:2px}
+.header .logout{padding:8px 14px;border:1px solid var(--emergency);color:var(--emergency);background:transparent;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+
+.status-bar{display:flex;justify-content:space-between;background:var(--surface);padding:14px;border-radius:12px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,.05);gap:8px}
+.status-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;flex:1;justify-content:center}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+.sos-wrap{display:flex;flex-direction:column;align-items:center;margin:24px 0}
+@keyframes pulse{
+  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(183,28,28,.5),0 10px 30px rgba(127,0,0,.5)}
+  50%{transform:scale(1.06);box-shadow:0 0 0 24px rgba(183,28,28,0),0 10px 30px rgba(127,0,0,.6)}
+}
+.sos-btn{
+  width:240px;height:240px;border-radius:50%;border:6px solid #fff;
+  background:radial-gradient(circle at 30% 30%,var(--emergency-light) 0%,var(--emergency) 55%,var(--emergency-dark) 100%);
+  color:#fff;font-size:72px;font-weight:900;letter-spacing:4px;
+  cursor:pointer;animation:pulse 1.8s ease-in-out infinite;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  user-select:none;transition:transform .1s
+}
+.sos-btn:active{transform:scale(.95);animation-play-state:paused}
+.sos-btn .lbl{font-size:11px;font-weight:700;letter-spacing:1px;margin-top:6px}
+.sos-hint{margin-top:20px;color:var(--text-2);font-size:13px;text-align:center;line-height:1.4}
+
+.info-card{background:var(--surface);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.info-card h4{font-size:15px;font-weight:700;margin-bottom:10px}
+.info-card p{font-size:14px;color:var(--text);line-height:1.5;margin-bottom:6px}
+.info-card .coord{font-family:"Menlo","Courier New",monospace;font-size:14px}
+.info-card .mut{color:var(--text-2);font-size:12px}
+.info-card ol{padding-left:20px}
+.info-card ol li{font-size:14px;margin-bottom:6px;line-height:1.5}
+
+.foot{text-align:center;color:var(--text-2);font-size:11px;margin-top:20px;line-height:1.5}
+
+/* --- Modal SOS --- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;justify-content:center;align-items:center;z-index:100;padding:20px}
+.modal.show{display:flex}
+.modal-content{background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;text-align:center}
+.modal-content h3{font-size:20px;font-weight:700;color:var(--emergency);margin-bottom:12px}
+.modal-content p{font-size:15px;color:var(--text);margin-bottom:20px;line-height:1.5}
+.modal-actions{display:flex;gap:10px}
+.modal-actions button{flex:1;padding:14px;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+.btn-cancel{background:#E0E0E0;color:var(--text)}
+.btn-send{background:var(--emergency);color:#fff}
+
+/* --- Toast --- */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#212121;color:#fff;padding:14px 20px;border-radius:8px;font-size:14px;z-index:200;opacity:0;transition:opacity .3s;max-width:90%;text-align:center;pointer-events:none}
+.toast.show{opacity:1}
+
+/* --- Cola --- */
+.queue-badge{display:inline-block;background:var(--warn);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px}
+
+/* --- Banner de alerta GPS --- */
+.gps-warning{
+  background:linear-gradient(135deg,#FF6B6B 0%,#C62828 100%);
+  color:#fff;padding:14px 16px;border-radius:12px;margin-bottom:16px;
+  display:none;align-items:center;gap:12px;cursor:pointer;
+  box-shadow:0 4px 12px rgba(198,40,40,.3);
+  animation:warnPulse 2s ease-in-out infinite
+}
+.gps-warning.show{display:flex}
+@keyframes warnPulse{
+  0%,100%{box-shadow:0 4px 12px rgba(198,40,40,.3)}
+  50%{box-shadow:0 4px 20px rgba(198,40,40,.6)}
+}
+.gps-warning .icon{font-size:24px;flex-shrink:0}
+.gps-warning .text{flex:1;font-size:13px;line-height:1.4}
+.gps-warning .text b{display:block;font-size:14px;margin-bottom:2px}
+.gps-warning .arrow{font-size:20px;flex-shrink:0}
+
+/* --- Botón autorizar dentro de la tarjeta --- */
+.btn-authorize-inline{
+  width:100%;padding:12px;background:var(--emergency);color:#fff;border:none;
+  border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;
+  display:none
+}
+.btn-authorize-inline.show{display:block}
+.btn-authorize-inline:active{opacity:.85}
+
+@media (max-width:360px){
+  .sos-btn{width:200px;height:200px;font-size:60px;border-width:5px}
+  .brand h1{font-size:26px}
+}
+
+/* --- Splash / Loading --- */.screen-splash{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:linear-gradient(180deg,var(--emergency) 0%,var(--emergency-dark) 100%);
+  flex-direction:column;justify-content:center;align-items:center;padding:24px;color:#fff;
+  animation:splashIn .3s ease-out
+}
+.screen-splash.active{display:flex}
+.screen-splash.fade-out{animation:splashOut .5s ease-in forwards}
+@keyframes splashIn{from{opacity:0}to{opacity:1}}
+@keyframes splashOut{from{opacity:1}to{opacity:0;visibility:hidden}}
+
+.splash-logo{position:relative;width:180px;height:180px;display:flex;justify-content:center;align-items:center;margin-bottom:40px}
+.splash-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:4px solid rgba(255,255,255,.15);
+  border-top-color:#fff;
+  animation:spin 1.2s linear infinite
+}
+.splash-ring::before{
+  content:"";position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.08);
+  animation:pulseRing 1.8s ease-in-out infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulseRing{
+  0%,100%{transform:scale(1);opacity:.6}
+  50%{transform:scale(1.15);opacity:0}
+}
+.splash-brand{text-align:center;z-index:2}
+.splash-brand h1{font-size:24px;font-weight:800;letter-spacing:2px;line-height:1}
+.splash-brand h2{font-size:14px;font-weight:600;letter-spacing:4px;margin-top:2px;color:#FFCDD2}
+
+.splash-status{width:100%;max-width:280px;text-align:center}
+.splash-bar{width:100%;height:4px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
+.splash-fill{height:100%;background:#fff;border-radius:2px;width:0%;transition:width .4s ease-out;box-shadow:0 0 8px rgba(255,255,255,.6)}
+.splash-msg{margin-top:14px;font-size:13px;color:#FFCDD2;font-weight:500;min-height:20px}
+.splash-foot{position:absolute;bottom:24px;font-size:11px;color:#FFCDD2;opacity:.7;text-align:center;line-height:1.5}
+</style>
+</head>
+<body>
+
+<!-- ============ SPLASH / CARGA ============ -->
+<div id="screen-splash" class="screen-splash active">
+  <div class="splash-logo">
+    <div class="splash-ring"></div>
+    <div class="splash-brand">
+      <h1>TERRASANA</h1>
+      <h2>SOS IA</h2>
+    </div>
+  </div>
+  <div class="splash-status">
+    <div class="splash-bar"><div class="splash-fill" id="splash-fill"></div></div>
+    <p id="splash-msg" class="splash-msg">Iniciando sistema…</p>
+  </div>
+  <p class="splash-foot">
+    UNAD · Minciencias 2026<br>
+    Plataforma territorial de alerta post-desastre
+  </p>
+</div>
+
+<!-- ============ LOGIN ============ -->
+<div id="screen-login" class="screen-auth">
+  <div class="brand">
+    <h1>TERRASANA</h1>
+    <h2>SOS IA</h2>
+    <p>Alerta geolocalizada en caso de sismo</p>
+  </div>
+  <div class="card">
+    <h3>Iniciar sesión</h3>
+    <label for="l-email">Correo electrónico</label>
+    <input id="l-email" type="email" autocomplete="email" placeholder="tu@correo.com">
+    <label for="l-pass">Contraseña</label>
+    <input id="l-pass" type="password" autocomplete="current-password" placeholder="Tu contraseña">
+    <div id="l-error" class="error"></div>
+    <button class="btn" id="btn-login">Entrar</button>
+    <button class="btn btn-ghost" onclick="showScreen('screen-register')">¿No tienes cuenta? <b>Regístrate</b></button>
+  </div>
+  <p class="disclaimer">
+    En caso de emergencia oficial marca <b>123</b>.<br>
+    TERRASANA es apoyo tecnológico, no reemplaza a los organismos de socorro.
+  </p>
+</div>
+
+<!-- ============ REGISTER ============ -->
+<div id="screen-register" class="screen-auth">
+  <div class="brand">
+    <h1>Crear cuenta</h1>
+    <p>Regístrate para poder enviar alertas geolocalizadas</p>
+  </div>
+  <div class="card">
+
+    <div class="section-title">👤 Tus datos</div>
+
+    <label for="r-nombre">Nombre</label>
+    <input id="r-nombre" type="text" autocomplete="given-name" placeholder="Ej: María">
+
+    <label for="r-apellido">Apellido</label>
+    <input id="r-apellido" type="text" autocomplete="family-name" placeholder="Ej: Rodríguez">
+
+    <label for="r-email">Correo electrónico</label>
+    <input id="r-email" type="email" autocomplete="email" placeholder="tu@correo.com">
+
+    <label for="r-tel">Número telefónico</label>
+    <input id="r-tel" type="tel" autocomplete="tel" placeholder="+57 300 000 0000">
+
+    <label for="r-pass">Contraseña</label>
+    <input id="r-pass" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres, letras y números">
+
+    <label for="r-pass2">Confirmar contraseña</label>
+    <input id="r-pass2" type="password" autocomplete="new-password" placeholder="Repite tu contraseña">
+
+    <div class="section-title">🚨 Contacto de emergencia</div>
+    <p class="section-hint">Un familiar o persona de confianza que será notificado si envías una alerta SOS.</p>
+
+    <label for="r-cont-nombre">Nombre del familiar</label>
+    <input id="r-cont-nombre" type="text" autocomplete="off" placeholder="Ej: Ana Rodríguez">
+
+    <label for="r-cont-email">Correo del familiar</label>
+    <input id="r-cont-email" type="email" autocomplete="off" placeholder="familiar@correo.com">
+
+    <label for="r-cont-tel">Teléfono del familiar</label>
+    <input id="r-cont-tel" type="tel" autocomplete="off" placeholder="+57 310 000 0000">
+
+    <div id="r-error" class="error"></div>
+    <button class="btn" id="btn-register">Continuar</button>
+    <button class="btn btn-ghost" onclick="showScreen('screen-login')">¿Ya tienes cuenta? <b>Inicia sesión</b></button>
+  </div>
+  <p class="disclaimer">
+    Al registrarte aceptas el tratamiento de datos personales conforme<br>a la Ley 1581 de 2012 y el protocolo ético del proyecto.
+  </p>
+</div>
+
+<!-- ============ AUTORIZACIÓN DE UBICACIÓN ============ -->
+<div id="screen-permissions" class="screen-auth">
+  <div class="perm-icon">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+    </svg>
+  </div>
+  <h2 class="perm-title">Autoriza tu ubicación</h2>
+  <p class="perm-desc">
+    TERRASANA SOS IA necesita conocer tu ubicación para enviarla a las brigadas territoriales en caso de un sismo.
+  </p>
+  <ul class="perm-benefits">
+    <li>Localizarte si quedas atrapado bajo escombros</li>
+    <li>Enviar tu última ubicación conocida cuando falla el GPS</li>
+    <li>Priorizar tu caso según cercanía a brigadas</li>
+    <li>Notificar a tu contacto de emergencia con tu posición</li>
+  </ul>
+  <button class="perm-btn-authorize" id="btn-authorize-loc">
+    📍 Autorizar ubicación ahora
+  </button>
+  <button class="perm-btn-skip" id="btn-skip-loc">Autorizar más tarde</button>
+  <p id="perm-status" class="perm-status"></p>
+</div>
+
+<!-- ============ SOS HOME ============ -->
+<div id="screen-home" class="screen">
+  <div class="header">
+    <div class="greeting">
+      <h2 id="hi-name">Hola</h2>
+      <p class="sub">Estás protegido por TERRASANA<span id="queue-badge" class="queue-badge" style="display:none">0 en cola</span></p>
+    </div>
+    <button class="logout" id="btn-logout">Salir</button>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-item"><span id="dot-net" class="status-dot" style="background:var(--offline)"></span><span id="lbl-net">Sin señal</span></div>
+    <div class="status-item"><span id="dot-bat" class="status-dot" style="background:var(--muted)"></span><span id="lbl-bat">— %</span></div>
+    <div class="status-item"><span id="dot-gps" class="status-dot" style="background:var(--warn)"></span><span id="lbl-gps">GPS…</span></div>
+  </div>
+
+  <!-- Banner que aparece si el GPS no está autorizado -->
+  <div id="gps-warning" class="gps-warning" onclick="requestLocationPermission()">
+    <span class="icon">⚠️</span>
+    <div class="text">
+      <b>GPS no autorizado</b>
+      Toca aquí para activar la ubicación. Sin GPS no podemos localizarte en caso de emergencia.
+    </div>
+    <span class="arrow">→</span>
+  </div>
+
+  <div class="sos-wrap">
+    <button class="sos-btn" id="btn-sos">
+      SOS
+      <span class="lbl">PULSA EN EMERGENCIA</span>
+    </button>
+    <p class="sos-hint">
+      Presiona el botón si sientes un sismo,<br>quedas atrapado o presencias una emergencia
+    </p>
+  </div>
+
+  <div class="info-card">
+    <h4>Tu ubicación actual</h4>
+    <p id="loc-lat" class="coord mut">Lat: —</p>
+    <p id="loc-lng" class="coord mut">Lng: —</p>
+    <p id="loc-acc" class="mut">Obteniendo tu ubicación GPS…</p>
+    <button id="btn-authorize-inline" class="btn-authorize-inline" onclick="requestLocationPermission()">
+      📍 Autorizar ubicación
+    </button>
+  </div>
+
+  <div class="info-card" id="card-contacto" style="display:none">
+    <h4>🚨 Contacto de emergencia</h4>
+    <p id="ce-nombre"></p>
+    <p id="ce-email" class="mut" style="font-size:13px"></p>
+    <p id="ce-tel" class="mut" style="font-size:13px"></p>
+  </div>
+
+  <div class="info-card">
+    <h4>Qué hacer en un sismo</h4>
+    <ol>
+      <li>Agáchate, cúbrete y sujétate bajo un mueble resistente.</li>
+      <li>Aléjate de ventanas, espejos y objetos que puedan caer.</li>
+      <li>Si quedas atrapado, no grites: golpea un tubo o pared con un objeto duro para que te escuchen.</li>
+      <li>Presiona SOS para enviar tu ubicación a las brigadas.</li>
+      <li>Conserva batería: cierra apps innecesarias.</li>
+    </ol>
+  </div>
+
+  <p class="foot">
+    Emergencia oficial: <b>123</b><br>
+    TERRASANA SOS IA · UNAD · Minciencias 2026<br>
+    <span id="app-ver" class="mut"></span>
+  </p>
+</div>
+
+<!-- ============ MODAL CONFIRMACIÓN ============ -->
+<div id="modal-sos" class="modal">
+  <div class="modal-content">
+    <h3>¿Enviar alerta SOS?</h3>
+    <p>¿Estás en peligro por sismo o quedaste atrapado?<br><br>Se enviará tu ubicación actual a las brigadas territoriales.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancel">Cancelar</button>
+      <button class="btn-send" id="btn-confirm">ENVIAR SOS</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const APP_VER = '2026.09.17.4';
+document.getElementById('app-ver').textContent = 'Versión de la app: ' + APP_VER;
+
+/* ===================== ALMACENAMIENTO ===================== */
+const K_USERS = 'terrasana:users';
+const K_SESSION = 'terrasana:session';
+const K_QUEUE = 'terrasana:queue';
+
+async function sha256(str){
+  const buf = new TextEncoder().encode(str + '::terrasana::v1');
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function getUsers(){ try{ return JSON.parse(localStorage.getItem(K_USERS) || '[]'); }catch{ return []; } }
+function saveUsers(u){ localStorage.setItem(K_USERS, JSON.stringify(u)); }
+function getSession(){ try{ return JSON.parse(localStorage.getItem(K_SESSION) || 'null'); }catch{ return null; } }
+function setSession(s){ localStorage.setItem(K_SESSION, JSON.stringify(s)); }
+function clearSession(){ localStorage.removeItem(K_SESSION); }
+function getQueue(){ try{ return JSON.parse(localStorage.getItem(K_QUEUE) || '[]'); }catch{ return []; } }
+function saveQueue(q){ localStorage.setItem(K_QUEUE, JSON.stringify(q)); }
+
+/* ===================== NAVEGACIÓN ===================== */
+function showScreen(id){
+  document.querySelectorAll('.screen,.screen-auth').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  clearErrors();
+}
+function clearErrors(){
+  ['l-error','r-error'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.classList.remove('show'); el.textContent = '';
+  });
+}
+function showError(id, msg){
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('show');
+}
+function toast(msg, ms=3000){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+/* ===================== LOGIN / REGISTER ===================== */
+document.getElementById('btn-login').addEventListener('click', async () => {
+  clearErrors();
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const pass = document.getElementById('l-pass').value;
+  if(!email || !pass){ showError('l-error','Ingresa tu correo y contraseña.'); return; }
+  const users = getUsers();
+  const user = users.find(u => u.email === email);
+  if(!user){ showError('l-error','Correo o contraseña incorrectos.'); return; }
+  const hash = await sha256(pass);
+  if(hash !== user.passwordHash){ showError('l-error','Correo o contraseña incorrectos.'); return; }
+  setSession({ userId: user.id, loginAt: new Date().toISOString() });
+  enterHome(user);
+});
+
+document.getElementById('btn-register').addEventListener('click', async () => {
+  clearErrors();
+  const nombre = document.getElementById('r-nombre').value.trim();
+  const apellido = document.getElementById('r-apellido').value.trim();
+  const email = document.getElementById('r-email').value.trim().toLowerCase();
+  const tel = document.getElementById('r-tel').value.trim();
+  const pass = document.getElementById('r-pass').value;
+  const pass2 = document.getElementById('r-pass2').value;
+  const contNombre = document.getElementById('r-cont-nombre').value.trim();
+  const contEmail = document.getElementById('r-cont-email').value.trim().toLowerCase();
+  const contTel = document.getElementById('r-cont-tel').value.trim();
+
+  // --- Validaciones datos personales ---
+  if(!nombre) return showError('r-error','Ingresa tu nombre.');
+  if(!apellido) return showError('r-error','Ingresa tu apellido.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('r-error','Correo electrónico inválido.');
+  if(!/^\+?\d{7,15}$/.test(tel.replace(/\s|-/g,''))) return showError('r-error','Teléfono inválido (7 a 15 dígitos).');
+  if(pass.length < 8) return showError('r-error','La contraseña debe tener al menos 8 caracteres.');
+  if(!/[A-Za-z]/.test(pass) || !/\d/.test(pass)) return showError('r-error','La contraseña debe combinar letras y números.');
+  if(pass !== pass2) return showError('r-error','Las contraseñas no coinciden.');
+
+  // --- Validaciones contacto de emergencia ---
+  if(!contNombre) return showError('r-error','Ingresa el nombre de tu contacto de emergencia.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contEmail)) return showError('r-error','Correo del familiar inválido.');
+  if(!/^\+?\d{7,15}$/.test(contTel.replace(/\s|-/g,''))) return showError('r-error','Teléfono del familiar inválido.');
+  if(contEmail === email) return showError('r-error','El correo del familiar debe ser distinto al tuyo.');
+  if(contTel.replace(/\s|-/g,'') === tel.replace(/\s|-/g,'')) return showError('r-error','El teléfono del familiar debe ser distinto al tuyo.');
+
+  const users = getUsers();
+  if(users.some(u => u.email === email)) return showError('r-error','Este correo ya está registrado.');
+
+  const passwordHash = await sha256(pass);
+  const user = {
+    id: 'usr_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+    nombre, apellido, email, telefono: tel, passwordHash,
+    contactoEmergencia: {
+      nombre: contNombre,
+      email: contEmail,
+      telefono: contTel
+    },
+    createdAt: new Date().toISOString()
+  };
+  users.push(user); saveUsers(users);
+  setSession({ userId: user.id, loginAt: new Date().toISOString() });
+  pendingUser = user;
+  showScreen('screen-permissions');
+});
+
+document.getElementById('btn-logout').addEventListener('click', () => {
+  clearSession(); stopWatchers();
+  ['l-email','l-pass','r-nombre','r-apellido','r-email','r-tel','r-pass','r-pass2','r-cont-nombre','r-cont-email','r-cont-tel'].forEach(id=>document.getElementById(id).value='');
+  showScreen('screen-login');
+});
+
+/* ===================== AUTORIZACIÓN DE UBICACIÓN ===================== */
+let pendingUser = null;
+
+document.getElementById('btn-authorize-loc').addEventListener('click', () => {
+  const statusEl = document.getElementById('perm-status');
+  const btnAuth = document.getElementById('btn-authorize-loc');
+
+  if(!('geolocation' in navigator)){
+    statusEl.textContent = 'Tu dispositivo no soporta GPS.';
+    return;
+  }
+
+  btnAuth.disabled = true;
+  btnAuth.textContent = '⏳ Esperando autorización…';
+  statusEl.textContent = 'Autoriza el permiso en la ventana de tu navegador.';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      // Éxito: guardamos que el usuario autorizó
+      if(pendingUser){
+        pendingUser.locationAuthorized = true;
+        pendingUser.locationAuthorizedAt = new Date().toISOString();
+        const users = getUsers();
+        const idx = users.findIndex(u => u.id === pendingUser.id);
+        if(idx >= 0){ users[idx] = pendingUser; saveUsers(users); }
+      }
+      statusEl.textContent = '✅ Ubicación autorizada correctamente.';
+      setTimeout(() => enterHome(pendingUser), 900);
+    },
+    (err) => {
+      btnAuth.disabled = false;
+      btnAuth.textContent = '📍 Intentar de nuevo';
+      if(err.code === 1){
+        statusEl.textContent = '⚠️ Permiso denegado. Actívalo en los ajustes del navegador para poder usar TERRASANA.';
+      } else {
+        statusEl.textContent = '⚠️ No se pudo obtener ubicación. Verifica que el GPS esté encendido.';
+      }
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+});
+
+document.getElementById('btn-skip-loc').addEventListener('click', () => {
+  if(!pendingUser) return;
+  toast('Puedes autorizar la ubicación más tarde desde la pantalla principal.', 4000);
+  setTimeout(() => enterHome(pendingUser), 500);
+});
+
+/* ===================== SPLASH DE CARGA + SESIÓN ===================== */
+async function runSplash(){
+  const fill = document.getElementById('splash-fill');
+  const msg = document.getElementById('splash-msg');
+  const steps = [
+    { pct: 20, txt: 'Iniciando sistema…',        wait: 400 },
+    { pct: 45, txt: 'Verificando conexión…',     wait: 450 },
+    { pct: 70, txt: 'Preparando geolocalización…', wait: 500 },
+    { pct: 90, txt: 'Cargando sesión…',          wait: 400 },
+    { pct: 100, txt: 'Listo',                    wait: 300 }
+  ];
+  for(const step of steps){
+    fill.style.width = step.pct + '%';
+    msg.textContent = step.txt;
+    await new Promise(r => setTimeout(r, step.wait));
+  }
+}
+
+async function bootApp(){
+  // Corre en paralelo: la animación de splash y la carga real de datos
+  const [_, session] = await Promise.all([
+    runSplash(),
+    Promise.resolve(getSession())
+  ]);
+
+  // Fade-out del splash
+  const splash = document.getElementById('screen-splash');
+  splash.classList.add('fade-out');
+  setTimeout(() => splash.classList.remove('active','fade-out'), 500);
+
+  // Decide a dónde ir
+  if(session){
+    const user = getUsers().find(u => u.id === session.userId);
+    if(user){ enterHome(user); return; }
+  }
+  showScreen('screen-login');
+}
+
+window.addEventListener('load', bootApp);
+
+/* ===================== HOME ===================== */
+let currentUser = null;
+let gpsWatchId = null;
+let batterySub = null;
+let lastLoc = { lat:null, lng:null, accuracy:null, status:'pending', ts:null };
+let batteryPct = null;
+let online = navigator.onLine;
+
+function enterHome(user){
+  currentUser = user;
+  pendingUser = null;
+  document.getElementById('hi-name').textContent = 'Hola, ' + user.nombre;
+
+  // Muestra la tarjeta del contacto de emergencia si existe
+  if(user.contactoEmergencia?.nombre){
+    document.getElementById('card-contacto').style.display = 'block';
+    document.getElementById('ce-nombre').textContent = user.contactoEmergencia.nombre;
+    document.getElementById('ce-email').textContent = '📧 ' + user.contactoEmergencia.email;
+    document.getElementById('ce-tel').textContent = '📱 ' + user.contactoEmergencia.telefono;
+  } else {
+    document.getElementById('card-contacto').style.display = 'none';
+  }
+
+  showScreen('screen-home');
+  startWatchers();
+  updateQueueBadge();
+  trySync();
+}
+
+function startWatchers(){
+  // GPS continuo
+  if('geolocation' in navigator){
+    // última posición conocida (rápida)
+    navigator.geolocation.getCurrentPosition(onPos, onPosErr, { enableHighAccuracy:false, maximumAge:60000, timeout:5000 });
+    gpsWatchId = navigator.geolocation.watchPosition(onPos, onPosErr, {
+      enableHighAccuracy: true, maximumAge: 5000, timeout: 15000
+    });
+  } else {
+    setGpsStatus('denied','Sin GPS disponible');
+  }
+
+  // Batería
+  if('getBattery' in navigator){
+    navigator.getBattery().then(b => {
+      batterySub = b;
+      updateBattery(b);
+      b.addEventListener('levelchange', () => updateBattery(b));
+      b.addEventListener('chargingchange', () => updateBattery(b));
+    });
+  } else {
+    document.getElementById('lbl-bat').textContent = 'Batería n/d';
+  }
+
+  // Red
+  updateNetwork();
+  window.addEventListener('online',  () => { updateNetwork(); trySync(); });
+  window.addEventListener('offline', updateNetwork);
+}
+
+function stopWatchers(){
+  if(gpsWatchId !== null){ navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+}
+
+function onPos(p){
+  lastLoc = {
+    lat: p.coords.latitude,
+    lng: p.coords.longitude,
+    accuracy: p.coords.accuracy,
+    status: 'gps',
+    ts: new Date(p.timestamp).toISOString()
+  };
+  setGpsStatus('gps','GPS activo');
+  document.getElementById('loc-lat').textContent = 'Lat: ' + lastLoc.lat.toFixed(6);
+  document.getElementById('loc-lat').classList.remove('mut');
+  document.getElementById('loc-lng').textContent = 'Lng: ' + lastLoc.lng.toFixed(6);
+  document.getElementById('loc-lng').classList.remove('mut');
+  document.getElementById('loc-acc').textContent = 'Precisión: ±' + Math.round(lastLoc.accuracy) + ' m · Actualizado: ' + new Date().toLocaleTimeString();
+}
+
+function onPosErr(err){
+  if(err.code === 1){ setGpsStatus('denied','Permiso denegado'); document.getElementById('loc-acc').textContent = 'Activa los permisos de ubicación en tu navegador.'; }
+  else if(err.code === 2){ setGpsStatus('unavailable','Sin ubicación'); document.getElementById('loc-acc').textContent = 'No se pudo obtener la ubicación. Reintentando…'; }
+  else { setGpsStatus('pending','Buscando GPS…'); }
+}
+
+function setGpsStatus(status, label){
+  const dot = document.getElementById('dot-gps');
+  const lbl = document.getElementById('lbl-gps');
+  const warning = document.getElementById('gps-warning');
+  const btnInline = document.getElementById('btn-authorize-inline');
+
+  lbl.textContent = label;
+
+  if(status === 'gps'){
+    dot.style.background = 'var(--online)';
+    warning.classList.remove('show');
+    btnInline.classList.remove('show');
+  } else if(status === 'denied' || status === 'unavailable'){
+    dot.style.background = 'var(--danger)';
+    warning.classList.add('show');
+    btnInline.classList.add('show');
+  } else {
+    dot.style.background = 'var(--warn)';
+    warning.classList.remove('show');
+    btnInline.classList.remove('show');
+  }
+}
+
+/* Reintenta pedir el permiso — se llama desde el banner o el botón */
+function requestLocationPermission(){
+  if(!('geolocation' in navigator)){
+    toast('Tu dispositivo no soporta GPS.', 4000);
+    return;
+  }
+  toast('Solicitando permiso… acepta en la ventana del navegador.', 3000);
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      onPos(pos);
+      toast('✅ Ubicación autorizada correctamente.', 3000);
+      // Reinicia el watch por si estaba detenido
+      if(gpsWatchId !== null){ navigator.geolocation.clearWatch(gpsWatchId); }
+      gpsWatchId = navigator.geolocation.watchPosition(onPos, onPosErr, {
+        enableHighAccuracy: true, maximumAge: 5000, timeout: 15000
+      });
+    },
+    (err) => {
+      if(err.code === 1){
+        toast('⚠️ Permiso denegado. Actívalo desde los ajustes de tu navegador.', 6000);
+      } else {
+        toast('⚠️ No se pudo obtener ubicación. Verifica que el GPS del celular esté encendido.', 5000);
+      }
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function updateBattery(b){
+  batteryPct = Math.round(b.level * 100);
+  const lbl = document.getElementById('lbl-bat');
+  const dot = document.getElementById('dot-bat');
+  lbl.textContent = batteryPct + '% ' + (b.charging ? '⚡' : 'batería');
+  if(batteryPct > 50) dot.style.background = 'var(--online)';
+  else if(batteryPct > 20) dot.style.background = 'var(--warn)';
+  else dot.style.background = 'var(--danger)';
+}
+
+function updateNetwork(){
+  online = navigator.onLine;
+  document.getElementById('dot-net').style.background = online ? 'var(--online)' : 'var(--offline)';
+  document.getElementById('lbl-net').textContent = online ? 'En línea' : 'Sin señal';
+}
+
+/* ===================== SOS ===================== */
+document.getElementById('btn-sos').addEventListener('click', () => {
+  if('vibrate' in navigator) navigator.vibrate([0, 400, 200, 400]);
+
+  // Si no hay coordenadas, avisa al usuario
+  const modal = document.getElementById('modal-sos');
+  const modalTitle = modal.querySelector('h3');
+  const modalDesc = modal.querySelector('p');
+
+  if(!lastLoc.lat || !lastLoc.lng){
+    modalTitle.textContent = '⚠️ Sin ubicación GPS';
+    modalDesc.innerHTML = 'No tenemos tu ubicación aún. Puedes:<br><br>1. <b>Autorizar ubicación</b> primero (recomendado)<br>2. <b>Enviar sin coordenadas</b> — la alerta llegará pero sin ubicación exacta.';
+    document.getElementById('btn-confirm').textContent = 'ENVIAR SIN GPS';
+  } else {
+    modalTitle.textContent = '¿Enviar alerta SOS?';
+    modalDesc.innerHTML = '¿Estás en peligro por sismo o quedaste atrapado?<br><br>Se enviará tu ubicación actual a las brigadas territoriales.';
+    document.getElementById('btn-confirm').textContent = 'ENVIAR SOS';
+  }
+  modal.classList.add('show');
+});
+document.getElementById('btn-cancel').addEventListener('click', () => {
+  document.getElementById('modal-sos').classList.remove('show');
+});
+document.getElementById('btn-confirm').addEventListener('click', () => {
+  document.getElementById('modal-sos').classList.remove('show');
+  sendSOS();
+});
+
+async function sendSOS(){
+  const payload = {
+    userId: currentUser.id,
+    nombre: currentUser.nombre + ' ' + currentUser.apellido,
+    telefono: currentUser.telefono,
+    email: currentUser.email,
+    contactoEmergencia: currentUser.contactoEmergencia || null,
+    emergencyType: 'sismo',
+    batteryLevel: batteryPct,
+    networkOnline: online,
+    timestamp: new Date().toISOString(),
+    coordinates: (lastLoc.lat && lastLoc.lng) ? {
+      lat: lastLoc.lat, lng: lastLoc.lng, accuracy: lastLoc.accuracy
+    } : null,
+    locationStatus: lastLoc.status,
+    locationTimestamp: lastLoc.ts
+  };
+
+  const q = getQueue();
+  q.push({ id: 'sos_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), payload, sentAt:null, tries:0 });
+  saveQueue(q);
+  updateQueueBadge();
+
+  if('vibrate' in navigator) navigator.vibrate([0, 200, 100, 200, 100, 200]);
+  console.log('[TERRASANA SOS]', JSON.stringify(payload, null, 2));
+
+  if(online){
+    const nombreFam = currentUser.contactoEmergencia?.nombre;
+    toast(nombreFam
+      ? `Alerta enviada. Se notificará a ${nombreFam} y a las brigadas.`
+      : 'Alerta enviada. Una brigada revisará tu caso.', 4000);
+    trySync();
+  } else {
+    toast('Sin señal. Tu alerta quedó en cola y se enviará al recuperar conexión.', 5000);
+  }
+}
+
+/* Sincronización con backend (v0.4 se conectará al API real FastAPI /sos) */
+async function trySync(){
+  if(!online) return;
+  const q = getQueue();
+  if(q.length === 0) return;
+
+  // TODO v0.4: reemplazar por fetch('/sos', { method:'POST', body: JSON.stringify(item.payload) })
+  // Por ahora se marca como "enviada" localmente para simular el envío.
+  for(const item of q){
+    if(!item.sentAt){
+      item.sentAt = new Date().toISOString();
+      item.tries += 1;
+    }
+  }
+  saveQueue(q);
+  updateQueueBadge();
+}
+
+function updateQueueBadge(){
+  const q = getQueue();
+  const pending = q.filter(i => !i.sentAt).length;
+  const b = document.getElementById('queue-badge');
+  if(pending > 0){ b.style.display='inline-block'; b.textContent = pending + ' en cola'; }
+  else b.style.display='none';
+}
+
+/* ===================== SERVICE WORKER ===================== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
