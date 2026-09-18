@@ -398,7 +398,7 @@ input:focus{outline:none;border-color:var(--emergency);background:#fff}
 <div id="toast" class="toast"></div>
 
 <script>
-const APP_VER = '2026.09.17.4';
+const APP_VER = '2026.09.17.5';
 document.getElementById('app-ver').textContent = 'Versión de la app: ' + APP_VER;
 
 /* ===================== ALMACENAMIENTO ===================== */
@@ -755,19 +755,19 @@ function updateNetwork(){
 document.getElementById('btn-sos').addEventListener('click', () => {
   if('vibrate' in navigator) navigator.vibrate([0, 400, 200, 400]);
 
-  // Si no hay coordenadas, avisa al usuario
   const modal = document.getElementById('modal-sos');
   const modalTitle = modal.querySelector('h3');
   const modalDesc = modal.querySelector('p');
+  const nombreFam = currentUser.contactoEmergencia?.nombre || 'tu contacto';
 
   if(!lastLoc.lat || !lastLoc.lng){
     modalTitle.textContent = '⚠️ Sin ubicación GPS';
-    modalDesc.innerHTML = 'No tenemos tu ubicación aún. Puedes:<br><br>1. <b>Autorizar ubicación</b> primero (recomendado)<br>2. <b>Enviar sin coordenadas</b> — la alerta llegará pero sin ubicación exacta.';
+    modalDesc.innerHTML = `Todavía no tenemos tu ubicación GPS.<br><br>Se enviará el correo de alerta a <b>${nombreFam}</b> pero <b>sin coordenadas</b>. ¿Continuar?`;
     document.getElementById('btn-confirm').textContent = 'ENVIAR SIN GPS';
   } else {
     modalTitle.textContent = '¿Enviar alerta SOS?';
-    modalDesc.innerHTML = '¿Estás en peligro por sismo o quedaste atrapado?<br><br>Se enviará tu ubicación actual a las brigadas territoriales.';
-    document.getElementById('btn-confirm').textContent = 'ENVIAR SOS';
+    modalDesc.innerHTML = `Se abrirá tu app de correo con un mensaje de emergencia listo para enviar a:<br><br><b>${nombreFam}</b><br><br>Solo tendrás que pulsar <b>"Enviar"</b> en tu app de correo.`;
+    document.getElementById('btn-confirm').textContent = 'ABRIR CORREO';
   }
   modal.classList.add('show');
 });
@@ -780,12 +780,76 @@ document.getElementById('btn-confirm').addEventListener('click', () => {
 });
 
 async function sendSOS(){
+  const nombreCompleto = currentUser.nombre + ' ' + currentUser.apellido;
+  const fam = currentUser.contactoEmergencia || {};
+  const hora = new Date().toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' });
+
+  // Enlaces de mapas si hay coordenadas
+  let ubicTexto, mapsLink, wazeLink;
+  if(lastLoc.lat && lastLoc.lng){
+    ubicTexto = `Latitud: ${lastLoc.lat.toFixed(6)}\nLongitud: ${lastLoc.lng.toFixed(6)}\nPrecisión: ±${Math.round(lastLoc.accuracy||0)} m`;
+    mapsLink  = `https://maps.google.com/?q=${lastLoc.lat},${lastLoc.lng}`;
+    wazeLink  = `https://waze.com/ul?ll=${lastLoc.lat},${lastLoc.lng}&navigate=yes`;
+  } else {
+    ubicTexto = 'Ubicación NO disponible (GPS sin autorizar o sin señal).';
+    mapsLink  = '';
+    wazeLink  = '';
+  }
+
+  // Cuerpo del correo (mailto no soporta HTML, así que va en texto plano)
+  const cuerpo =
+`🚨 ALERTA DE EMERGENCIA - TERRASANA SOS IA
+
+Hola ${fam.nombre || 'contacto de emergencia'},
+
+${nombreCompleto} activó una alerta SOS por sismo desde TERRASANA SOS IA y te registró como su contacto de emergencia.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+📍 UBICACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━
+${ubicTexto}
+${mapsLink ? '\n🗺️ Ver en Google Maps:\n' + mapsLink : ''}
+${wazeLink ? '\n🚗 Navegar con Waze:\n' + wazeLink : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+🕐 DETALLES DEL EVENTO
+━━━━━━━━━━━━━━━━━━━━━━━━
+Hora: ${hora}
+Tipo: Sismo
+Batería del celular: ${batteryPct || 'n/d'}%
+Conexión: ${online ? 'En línea' : 'Sin señal'}
+Estado del GPS: ${lastLoc.status === 'gps' ? 'Activo' : lastLoc.status === 'last_known' ? 'Última ubicación conocida' : 'No disponible'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+📱 CONTACTAR A LA PERSONA
+━━━━━━━━━━━━━━━━━━━━━━━━
+Nombre: ${nombreCompleto}
+Teléfono: ${currentUser.telefono}
+Correo: ${currentUser.email}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ QUÉ HACER AHORA
+━━━━━━━━━━━━━━━━━━━━━━━━
+1. Intenta comunicarte por celular o WhatsApp.
+2. Si no responde, comparte esta ubicación con Emergencias Colombia: 123, Bomberos, Defensa Civil o Cruz Roja.
+3. Si estás cerca, dirígete al lugar con precaución.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+Mensaje generado automáticamente por
+TERRASANA SOS IA - UNAD, Minciencias 2026.
+Esta app no reemplaza a los organismos oficiales de socorro.
+Emergencia oficial en Colombia: 123.`;
+
+  const asunto = `🚨 ALERTA SOS - ${nombreCompleto} necesita ayuda urgente`;
+  const destinatario = fam.email || '';
+
+  // Guarda en cola local (para trazabilidad / futuro backend)
   const payload = {
     userId: currentUser.id,
-    nombre: currentUser.nombre + ' ' + currentUser.apellido,
+    nombre: nombreCompleto,
     telefono: currentUser.telefono,
     email: currentUser.email,
-    contactoEmergencia: currentUser.contactoEmergencia || null,
+    contactoEmergencia: fam,
     emergencyType: 'sismo',
     batteryLevel: batteryPct,
     networkOnline: online,
@@ -794,9 +858,10 @@ async function sendSOS(){
       lat: lastLoc.lat, lng: lastLoc.lng, accuracy: lastLoc.accuracy
     } : null,
     locationStatus: lastLoc.status,
-    locationTimestamp: lastLoc.ts
+    locationTimestamp: lastLoc.ts,
+    emailDestino: destinatario,
+    emailAsunto: asunto
   };
-
   const q = getQueue();
   q.push({ id: 'sos_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), payload, sentAt:null, tries:0 });
   saveQueue(q);
@@ -805,15 +870,15 @@ async function sendSOS(){
   if('vibrate' in navigator) navigator.vibrate([0, 200, 100, 200, 100, 200]);
   console.log('[TERRASANA SOS]', JSON.stringify(payload, null, 2));
 
-  if(online){
-    const nombreFam = currentUser.contactoEmergencia?.nombre;
-    toast(nombreFam
-      ? `Alerta enviada. Se notificará a ${nombreFam} y a las brigadas.`
-      : 'Alerta enviada. Una brigada revisará tu caso.', 4000);
-    trySync();
-  } else {
-    toast('Sin señal. Tu alerta quedó en cola y se enviará al recuperar conexión.', 5000);
-  }
+  // Abre el cliente de correo del celular con el mensaje listo
+  const mailto = `mailto:${encodeURIComponent(destinatario)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+
+  toast(`Abriendo tu correo para enviar la alerta a ${fam.nombre || 'tu contacto'}. Pulsa "Enviar" en tu app de correo.`, 6000);
+
+  // Pequeño retraso para que se vea el toast antes de abrir el cliente de correo
+  setTimeout(() => {
+    window.location.href = mailto;
+  }, 800);
 }
 
 /* Sincronización con backend (v0.4 se conectará al API real FastAPI /sos) */

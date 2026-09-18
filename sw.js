@@ -5,7 +5,7 @@
    Con esto la app se actualiza sola: no hay que desinstalarla ni forzar el cierre.
 */
 
-const VERSION = '2026.09.17.4';
+const VERSION = '2026.09.17.5';
 const CACHE   = 'terrasana-' + VERSION;
 const CORE = [
   './', './index.html', './manifest.json',
